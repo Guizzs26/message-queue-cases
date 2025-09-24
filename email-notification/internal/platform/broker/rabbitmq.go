@@ -63,10 +63,11 @@ func (r *RabbitMQBroker) Publish(ctx context.Context, queueName string, msg Mess
 		return fmt.Errorf("failed to declare the rabbitmq queue: %v", err)
 	}
 
-	var amqpmsg *amqp.Publishing
-	amqpmsg.ContentType = msg.ContentType
-	amqpmsg.Body = msg.Body
-	amqpmsg.DeliveryMode = amqp.Persistent // disk storage
+	amqpmsg := amqp.Publishing{
+		ContentType:  msg.ContentType,
+		Body:         msg.Body,
+		DeliveryMode: amqp.Persistent, // disk storage
+	}
 
 	err = r.channel.PublishWithContext(
 		ctx,
@@ -74,10 +75,10 @@ func (r *RabbitMQBroker) Publish(ctx context.Context, queueName string, msg Mess
 		queueName,
 		false,
 		false,
-		*amqpmsg,
+		amqpmsg,
 	)
 	if err != nil {
-		return fmt.Errorf("failed to publish message: %v", err)
+		return fmt.Errorf("publish message: %v", err)
 	}
 
 	return nil

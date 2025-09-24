@@ -15,6 +15,6 @@ WORKDIR /
 
 COPY --from=builder /api-server .
 
-EXPOSE 8080
+EXPOSE 9919
 
 CMD ["/api-server"]
