@@ -1,0 +1,97 @@
+# ------------------------------
+# Go build / binaries
+# ------------------------------
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Local build outputs
+/bin/
+/build/
+/dist/
+/release/
+/tmp/
+
+# ------------------------------
+# Go modules / cache
+# ------------------------------
+/vendor/
+/Godeps/
+/Godeps.json
+/go.sum  
+/go.work  
+/go.work.sum
+
+# Go cache / profiling / coverage
+*.prof
+*.pprof
+*.cover
+*.cov
+*.test
+*.bench
+*.tmp
+*.log
+
+# ------------------------------
+# IDEs and editors
+# ------------------------------
+
+# VSCode
+.vscode/
+*.code-workspace
+
+# JetBrains / GoLand
+.idea/
+*.iml
+
+# Sublime
+*.sublime-project
+*.sublime-workspace
+
+# ------------------------------
+# Operating system files
+# ------------------------------
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.nfs*
+
+# ------------------------------
+# Docker
+# ------------------------------
+/.docker/
+/docker-compose.override.yml
+
+# ------------------------------
+# Sensitive config files
+# ------------------------------
+.env
+.env.local
+.env.*
+!.env.example
+
+# Certificates and keys
+*.pem
+*.crt
+*.key
+
+# ------------------------------
+# Tests / Coverage
+# ------------------------------
+coverage.out
+coverage.html

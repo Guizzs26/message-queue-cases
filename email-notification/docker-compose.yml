@@ -24,10 +24,10 @@ services:
       context: . 
       dockerfile: ./cmd/api/Dockerfile 
     ports:
-      - "8080:8080" 
+      - ${API_PORT_DOCKER}:${API_PORT_DOCKER} 
     environment:
-      - API_PORT=:8080
-      - RABBITMQ_URL=amqp://user:password@rabbitmq:5672/
+      - API_PORT=${API_PORT_DOCKER}
+      - RABBITMQ_URL=${RABBITMQ_URL}
     depends_on:
       rabbitmq:
         condition: service_healthy 
@@ -40,7 +40,7 @@ services:
       context: .
       dockerfile: ./cmd/worker/Dockerfile 
     environment:
-      - RABBITMQ_URL=amqp://user:password@rabbitmq:5672/
+      - RABBITMQ_URL=${RABBITMQ_URL}
     depends_on:
       rabbitmq:
         condition: service_healthy 
