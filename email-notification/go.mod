@@ -2,7 +2,10 @@ module github.com/Guizzs26/message-queue
 
 go 1.25.0
 
-require github.com/labstack/echo/v4 v4.13.4
+require (
+	github.com/labstack/echo/v4 v4.13.4
+	github.com/rabbitmq/amqp091-go v1.10.0
+)
 
 require (
 	github.com/labstack/gommon v0.4.2 // indirect
