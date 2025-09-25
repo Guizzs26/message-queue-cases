@@ -40,11 +40,11 @@ func NewApp(cfg *Config) (*App, error) {
 		validate: validator.New(),
 	}
 
-	rmqb, err := broker.NewRabbitMQBroker(cfg.RabbitMQURL)
+	rmqBroker, err := broker.NewRabbitMQBroker(cfg.RabbitMQURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize rabbitmq broker: %w", err)
 	}
-	app.broker = rmqb
+	app.broker = rmqBroker
 
 	app.setupMiddleware()
 	app.setupRoutes()

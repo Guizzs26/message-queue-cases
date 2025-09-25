@@ -16,6 +16,7 @@ type Message struct {
 
 type Broker interface {
 	Publish(ctx context.Context, queueName string, msg Message) error
+	Consume(ctx context.Context, queueName string) (<-chan amqp.Delivery, error)
 	Close()
 }
 
@@ -63,7 +64,7 @@ func (r *RabbitMQBroker) Publish(ctx context.Context, queueName string, msg Mess
 		return fmt.Errorf("failed to declare the rabbitmq queue: %v", err)
 	}
 
-	amqpmsg := amqp.Publishing{
+	rmqmsg := amqp.Publishing{
 		ContentType:  msg.ContentType,
 		Body:         msg.Body,
 		DeliveryMode: amqp.Persistent, // disk storage
@@ -75,11 +76,42 @@ func (r *RabbitMQBroker) Publish(ctx context.Context, queueName string, msg Mess
 		queueName,
 		false,
 		false,
-		amqpmsg,
+		rmqmsg,
 	)
 	if err != nil {
 		return fmt.Errorf("publish message: %v", err)
 	}
 
 	return nil
+}
+
+func (r *RabbitMQBroker) Consume(ctx context.Context, queueName string) (<-chan amqp.Delivery, error) {
+	_, err := r.channel.QueueDeclare(
+		queueName,
+		true,
+		false,
+		false,
+		false,
+		nil,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to declare the rabbitmq queue to consume: %v", err)
+	}
+
+	dl, err := r.channel.ConsumeWithContext(
+		ctx,
+		queueName,
+		"",
+		false,
+		false,
+		false,
+		false,
+		nil,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to start consuming from queue: %v", err)
+
+	}
+
+	return dl, nil
 }
