@@ -2,22 +2,22 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
-	"github.com/Guizzs26/message-queue/internal/core/notification"
 	"github.com/Guizzs26/message-queue/internal/platform/broker"
+	"github.com/Guizzs26/message-queue/internal/platform/notifier"
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
 )
 
 type Config struct {
-	RabbitMQURL string `envconfig:"RABBITMQ_URL" required:"true"`
+	RabbitMQURL  string `envconfig:"RABBITMQ_URL" required:"true"`
+	ResendAPIKey string `envconfig:"RESEND_API_KEY" required:"true"`
+	EmailFrom    string `envconfig:"EMAIL_FROM_ADDRESS" required:"true"`
 }
 
 func main() {
@@ -31,36 +31,35 @@ func main() {
 		log.Fatalf("failed to initialize rabbitmq broker: %v", err)
 	}
 
-	gracefulShutdown(rmqBroker)
+	resendNotifier := notifier.NewResendNotifier(cfg.ResendAPIKey, cfg.EmailFrom)
+
+	gracefulShutdown(rmqBroker, resendNotifier)
 }
 
-func run(b broker.Broker) {
+func run(b broker.Broker, n notifier.Notifier) {
 	log.Println("Notification worker starting...")
 
-	msgs, err := b.Consume(context.Background(), "email_notifications")
+	queueName := "email_notifications"
+	msgs, err := b.Consume(context.Background(), queueName)
 	if err != nil {
-		log.Fatalf("failed to start consuming messages: %v", err)
+		log.Fatalf("failed to start consuming from queue '%s': %v", queueName, err)
 	}
 
 	log.Println("Worker is alive and waiting for messages...")
 
-	var payload notification.EmailPayload
 	for msg := range msgs {
-		err = json.Unmarshal(msg.Body, &payload)
-		if err != nil {
-			log.Printf("[ERROR]: failed to unmarshal message body: %v", err)
+		log.Printf("Received a message from queue '%s'", queueName)
 
-			if err := msg.Nack(false, false); err != nil {
-				log.Printf("[ERROR]: failed to nack message: %v", err)
+		if err := n.Send(context.Background(), msg.Body); err != nil {
+			log.Printf("ERROR: failed to send notification: %v. Rejecting message.", err)
+			if nackErr := msg.Nack(false, false); nackErr != nil {
+				log.Printf("FATAL: failed to nack message: %v", nackErr)
+			} else {
+				log.Printf("Successfully processed message. Sending Ack.")
+				if ackErr := msg.Ack(false); ackErr != nil {
+					log.Printf("ERROR: failed to ack message: %v", ackErr)
+				}
 			}
-			continue
-		}
-
-		log.Printf("Simulating sending email to %s with subject '%s'", payload.To, payload.Subject)
-		time.Sleep(1 * time.Second)
-
-		if err := msg.Ack(false); err != nil {
-			log.Printf("[ERROR]: failed to ack message: %v", err)
 		}
 	}
 
@@ -78,11 +77,11 @@ func loadConfig() (*Config, error) {
 	return &cfg, nil
 }
 
-func gracefulShutdown(b broker.Broker) {
+func gracefulShutdown(b broker.Broker, n notifier.Notifier) {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
-	go run(b)
+	go run(b, n)
 
 	<-sigChan
 	log.Println("Shutdown signal received")
