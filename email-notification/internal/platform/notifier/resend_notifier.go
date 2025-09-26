@@ -14,30 +14,29 @@ type ResendNotifier struct {
 	fromEmail string
 }
 
-func NewResendNotifier(apiKey, fromEmail string) Notifier {
-	client := resend.NewClient(apiKey)
-
+func NewResendNotifier(k, fe string) Notifier {
+	c := resend.NewClient(k)
 	return &ResendNotifier{
-		client:    client,
-		fromEmail: fromEmail,
+		client:    c,
+		fromEmail: fe,
 	}
 }
 
 func (rn *ResendNotifier) Send(ctx context.Context, payload []byte) error {
-	var data notification.EmailPayload
-	err := json.Unmarshal(payload, &data)
+	var ep notification.EmailPayload
+	err := json.Unmarshal(payload, &ep)
 	if err != nil {
-		return fmt.Errorf("failed to unmarshal email payload to send send email via resend: %v", err)
+		return fmt.Errorf("failed to unmarshal payload for resend: %v", err)
 	}
 
 	params := &resend.SendEmailRequest{
-		To:      []string{data.To},
+		To:      []string{ep.To},
 		From:    rn.fromEmail,
-		Subject: data.Subject,
-		Html:    data.Body,
+		Subject: ep.Subject,
+		Html:    ep.Body,
 	}
 
-	_, err = rn.client.Emails.Send(params)
+	_, err = rn.client.Emails.SendWithContext(ctx, params)
 	if err != nil {
 		return fmt.Errorf("failed to send email via resend: %v", err)
 	}
